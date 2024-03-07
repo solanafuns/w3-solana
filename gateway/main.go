@@ -1,12 +1,7 @@
 package main
 
-import (
-	log "github.com/sirupsen/logrus"
-)
+import "github.com/solanafuns/w3-solana/gateway/cmd"
 
 func main() {
-	log.SetFormatter(&log.TextFormatter{
-		DisableColors: false,
-		FullTimestamp: true})
-	log.Println(".")
+	cmd.Execute()
 }
