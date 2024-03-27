@@ -1,0 +1,12 @@
+body{
+    background-color: azure;
+    color: black;
+    font-family: Arial, sans-serif;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+h1{
+    width: 80%;
+    text-align: center;
+}
