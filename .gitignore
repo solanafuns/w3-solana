@@ -16,3 +16,8 @@ Cargo.lock
 go.sum
 
 env.sh
+
+.DS_Store
+
+dist
+test-ledger

@@ -41,7 +41,7 @@ func initConfig() {
 		viper.AddConfigPath(".")
 		viper.AddConfigPath("/etc")
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".gateway")
+		viper.SetConfigName("gateway")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
