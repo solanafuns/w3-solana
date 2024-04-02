@@ -2,7 +2,7 @@ use borsh::BorshSerialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
-    program::invoke_signed,
+    program::{invoke, invoke_signed},
     pubkey::Pubkey,
     system_instruction,
     sysvar::{rent::Rent, Sysvar},
@@ -48,10 +48,8 @@ pub fn put_content(
         let need_rents = Rent::get()?.minimum_balance(data_size);
         if content_account.lamports() < need_rents {
             let amount: u64 = need_rents - content_account.lamports();
-            let dest_starting_lamports = payer.lamports();
-
-            **payer.lamports.borrow_mut() = dest_starting_lamports.checked_sub(amount).unwrap();
-            **content_account.lamports.borrow_mut() += amount;
+            let transfer_ix = system_instruction::transfer(payer.key, content_account.key, amount);
+            invoke(&transfer_ix, &[payer.clone(), content_account.clone()])?;
         }
         content_account.realloc(data_size, true)?;
         let mut pda_data = content_account.try_borrow_mut_data()?;
