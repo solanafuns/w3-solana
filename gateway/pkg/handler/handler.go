@@ -10,7 +10,6 @@ import (
 )
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-
 	host := r.Host
 	logrus.Info("host: ", host)
 	segments := strings.Split(host, ".w3sol.xyz")
@@ -35,17 +34,21 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
 			} else {
-				w.Header().Set("W3-Solana-Resolver", client.NameResolver.ToBase58())
-				w.Header().Set("W3-Solana-Program", client.Program.ToBase58())
-				w.Header().Set("W3-Solana-Account", account.ToBase58())
-				w.Header().Set("W3-Solana-Network", client.Network())
-				w.WriteHeader(http.StatusOK)
-				w.Write(content)
-				logrus.WithFields(logrus.Fields{
-					"program": client.Program.ToBase58(),
-					"account": account.ToBase58(),
-					"path":    r.RequestURI,
-				}).Info("Done !!!!")
+				if pageContent, err := solana.ParsePageContent(content); err == nil {
+					logrus.Infof("parse content done ")
+					if len(pageContent.RawData) > 0 {
+						logrus.Info("has RawData")
+						w.WriteHeader(http.StatusOK)
+						w.Header().Set("W3-Solana-Resolver", client.NameResolver.ToBase58())
+						w.Header().Set("W3-Solana-Program", client.Program.ToBase58())
+						w.Header().Set("W3-Solana-Account", account.ToBase58())
+						w.Header().Set("W3-Solana-Network", client.Network())
+						w.Write(pageContent.RawData)
+					}
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte(err.Error()))
+				}
 			}
 		}
 	} else {
