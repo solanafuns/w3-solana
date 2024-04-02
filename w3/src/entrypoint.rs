@@ -18,9 +18,13 @@ pub fn process_instruction(
     msg!("Program ID: {:?}", program_id);
     match InstructionData::try_from_slice(instruction_data) {
         Ok(instruction_data) => match instruction_data {
-            InstructionData::NameMapping { name, program } => {
+            InstructionData::NameMapping {
+                name,
+                program,
+                default_page,
+            } => {
                 msg!("Name Mapping: {:?}", name);
-                config::name_config(program_id, accounts, &name, program)?
+                config::name_config(program_id, accounts, &name, program, default_page)?
             }
             InstructionData::PutContent { path, body } => {
                 process::put_content(program_id, accounts, &path, &body)?

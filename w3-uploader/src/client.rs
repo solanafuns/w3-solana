@@ -102,6 +102,7 @@ impl W3Client {
         let instruction_enum = InstructionData::NameMapping {
             name: name.to_string(),
             program: self.program,
+            default_page: "/index.html".to_string(),
         };
 
         match instruction_enum.try_to_vec() {

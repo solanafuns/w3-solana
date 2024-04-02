@@ -6,10 +6,11 @@ import (
 )
 
 type NameConfig struct {
-	Name      string
-	Program   common.PublicKey
-	Creator   common.PublicKey
-	CreatedAt uint64
+	Name        string
+	Program     common.PublicKey
+	Creator     common.PublicKey
+	CreatedAt   uint64
+	DefaultPage string
 }
 
 func ParseConfig(data []byte) (*NameConfig, error) {

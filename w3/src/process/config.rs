@@ -13,6 +13,7 @@ pub fn name_config(
     accounts: &[AccountInfo],
     name: &String,
     program: pubkey::Pubkey,
+    default_page: String,
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
     let payer: &AccountInfo<'_> = next_account_info(account_info_iter)?;
@@ -32,6 +33,7 @@ pub fn name_config(
         program,
         creator: payer.key.clone(),
         created_at: now.unix_timestamp as u64,
+        default_page,
     };
     let data_size = config_data.to_bytes().len();
     let rent_lamports = rent.minimum_balance(data_size);

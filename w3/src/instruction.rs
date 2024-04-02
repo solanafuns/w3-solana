@@ -20,6 +20,7 @@ pub enum InstructionData {
     NameMapping {
         name: String,
         program: pubkey::Pubkey,
+        default_page: String,
     },
 }
 
@@ -41,6 +42,7 @@ pub struct NameConfig {
     pub program: pubkey::Pubkey,
     pub creator: pubkey::Pubkey,
     pub created_at: u64,
+    pub default_page: String,
 }
 
 impl NameConfig {

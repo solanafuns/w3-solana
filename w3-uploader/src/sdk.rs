@@ -87,6 +87,7 @@ pub enum InstructionData {
     NameMapping {
         name: String,
         program: pubkey::Pubkey,
+        default_page: String,
     },
 }
 
