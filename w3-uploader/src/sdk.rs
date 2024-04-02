@@ -1,4 +1,5 @@
 use {
+    crate::client::W3Client,
     borsh::{BorshDeserialize, BorshSerialize},
     serde::{Deserialize, Serialize},
     solana_client::rpc_client::RpcClient,
@@ -7,6 +8,7 @@ use {
     std::{fs, str::FromStr},
 };
 
+#[derive(Clone)]
 pub enum Network {
     Local,
     Dev,
@@ -77,6 +79,11 @@ pub enum InstructionData {
         path: String,
         body: Vec<u8>,
     },
+    PutTrunkContent {
+        path: String,
+        trunk_no: u8,
+        body: Vec<u8>,
+    },
     NameMapping {
         name: String,
         program: pubkey::Pubkey,
@@ -129,6 +136,20 @@ impl ClientInfo {
                     loaded: false,
                 };
             }
+        }
+    }
+    pub fn get_w3_client(self) -> Result<W3Client, String> {
+        let ClientInfo {
+            program,
+            signer,
+            network,
+            loaded,
+            trunk_size,
+        } = self;
+        if loaded {
+            return Ok(W3Client::new(program, signer, network, trunk_size));
+        } else {
+            return Err("Client not loaded".into());
         }
     }
 }

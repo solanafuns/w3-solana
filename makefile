@@ -7,8 +7,8 @@ deploy-remote-local: sbf
 
 deploy-remote-dev: sbf
 	solana config set --url devnet
-	solana program deploy dist/contract/contract.so
+	solana program deploy dist/w3/w3.so
 
 deploy-remote-main: sbf
 	solana config set --url mainnet-beta
-	solana program deploy dist/contract/contract.so
+	solana program deploy dist/w3/w3.so

@@ -1,57 +1,65 @@
 use {
     borsh::BorshSerialize,
     log::{error, info, warn},
+    solana_client::rpc_client::RpcClient,
     solana_sdk::{
-        instruction::{AccountMeta, Instruction},
+        instruction::AccountMeta,
         pubkey::Pubkey,
         signature::{Keypair, Signer},
         system_program,
-        transaction::Transaction,
     },
     std::{fs, path::Path, str::FromStr},
 };
 
-use crate::sdk::{ClientInfo, InstructionData, Network};
+use crate::{
+    sdk::{InstructionData, Network},
+    solana_trait::SolanaTransaction,
+};
 
 pub struct W3Client {
-    program: Pubkey,
-    signer: Keypair,
-    network: Network,
-    trunk_size: usize,
+    pub program: Pubkey,
+    pub signer: Keypair,
+    pub network: Network,
+    pub trunk_size: usize,
+    pub connection: RpcClient,
 }
 
 impl W3Client {
-    pub fn from_client_info(info: ClientInfo) -> Result<Self, String> {
-        let ClientInfo {
-            program,
-            signer,
-            network,
-            loaded,
-            trunk_size,
-        } = info;
-        if loaded {
-            return Ok(Self {
-                program,
-                signer,
-                network,
-                trunk_size,
-            });
-        } else {
-            return Err("Client not loaded".into());
-        }
-    }
-    pub fn from_args(program: String, network: String, account: String) -> Self {
-        let program = Pubkey::from_str(program.as_str()).unwrap();
-        let signer = Keypair::from_base58_string(account.as_str());
+    pub fn new(program: Pubkey, signer: Keypair, network: Network, trunk_size: usize) -> Self {
         Self {
             program,
             signer,
-            network: Network::from_string(network.as_str()),
-            trunk_size: 512,
+            network: network.clone(),
+            trunk_size,
+            connection: network.get_rpc_client(),
         }
     }
 
-    fn visit_dirs(&self, dir: &Path, root_dir: &Path) -> std::io::Result<()> {
+    pub fn from_args(program: String, network: String, account: String) -> Self {
+        let program = Pubkey::from_str(program.as_str()).unwrap();
+        let signer = Keypair::from_base58_string(account.as_str());
+        let network = &Network::from_string(network.as_str());
+        Self {
+            program,
+            signer,
+            network: network.clone(),
+            trunk_size: 512,
+            connection: network.get_rpc_client(),
+        }
+    }
+
+    pub fn say_hi(&self) {
+        println!("");
+        info!("🔥 Hello, W3Client! 🔥 ");
+        info!("current account : {}", self.signer.pubkey());
+        info!("current program : {:?}", self.program);
+        info!("current network : {:?}", self.network.to_string());
+        println!("");
+    }
+}
+
+impl W3Client {
+    pub fn visit_dirs(&self, dir: &Path, root_dir: &Path) -> std::io::Result<()> {
         if dir.is_dir() {
             for entry in fs::read_dir(dir)? {
                 let entry = entry?;
@@ -82,15 +90,6 @@ impl W3Client {
             }
         }
         Ok(())
-    }
-
-    pub fn say_hi(&self) {
-        println!("");
-        info!("🔥 Hello, W3Client! 🔥 ");
-        info!("current account : {}", self.signer.pubkey());
-        info!("current program : {:?}", self.program);
-        info!("current network : {:?}", self.network.to_string());
-        println!("");
     }
 
     pub fn config_name(&self, name: &str) {
@@ -137,14 +136,12 @@ impl W3Client {
         }
     }
 
-    pub fn loop_dir(&self, directory: &str) {
-        info!("Looping through directory: {}", directory);
-        self.visit_dirs(directory.as_ref(), directory.as_ref())
-            .unwrap();
+    pub fn deploy(&self) {
+        info!("Deploying program...");
     }
 
     fn upload_file(&self, web_path: &str, full_path: &str) {
-        let (account, bump_seed) = self.get_path_account(web_path);
+        let (account, bump_seed) = self.find_program_address_by_text(web_path);
         info!("Account: {}", account);
         info!("Bump seed: {}", bump_seed);
         let file_body = {
@@ -190,43 +187,6 @@ impl W3Client {
             }
             Err(e) => {
                 error!("Error serializing instruction: {:?}", e);
-            }
-        }
-    }
-
-    pub fn get_path_account(&self, web_path: &str) -> (Pubkey, u8) {
-        let mut seeds: Vec<&[u8]> = Vec::new();
-        if web_path.len() > 32 {
-            for chunk in web_path.as_bytes().chunks(32) {
-                seeds.push(chunk);
-            }
-        } else {
-            seeds.push(web_path.as_bytes());
-        }
-        Pubkey::find_program_address(seeds.as_ref(), &self.program)
-    }
-
-    pub fn find_program_address(&self, seeds: &[&[u8]]) -> (Pubkey, u8) {
-        Pubkey::find_program_address(seeds, &self.program)
-    }
-
-    pub fn send_instruction(
-        &self,
-        payer: &Pubkey,
-        singers: &Vec<&Keypair>,
-        instruction: Instruction,
-    ) {
-        let connection = self.network.get_rpc_client();
-        let blockhash = connection.get_latest_blockhash().unwrap();
-        let transaction =
-            Transaction::new_signed_with_payer(&[instruction], Some(&payer), singers, blockhash);
-
-        match connection.send_and_confirm_transaction(&transaction) {
-            Ok(tx) => {
-                info!("send message tx : {:?}", tx);
-            }
-            Err(e) => {
-                error!("send message error : {:?}", e);
             }
         }
     }
