@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -23,6 +24,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			client.Program = config.Program
+
+			if r.RequestURI == "/_config" {
+				configBytes, _ := json.Marshal(config)
+				w.Write(configBytes)
+				return
+			}
+
 		}
 		logrus.Info("host: ", host, " name: ", nameHost, " program: ", client.Program.ToBase58())
 
