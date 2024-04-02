@@ -12,6 +12,11 @@ pub enum InstructionData {
         path: String,
         body: Vec<u8>,
     },
+    PutTrunkContent {
+        path: String,
+        trunk_no: u8,
+        body: Vec<u8>,
+    },
     NameMapping {
         name: String,
         program: pubkey::Pubkey,
@@ -22,6 +27,12 @@ impl InstructionData {
     pub fn to_bytes(&self) -> Vec<u8> {
         borsh::BorshSerialize::try_to_vec(self).unwrap()
     }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+pub enum PageData {
+    RawData { data: Vec<u8> },
+    TrunkPage { trunks: u8 },
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]

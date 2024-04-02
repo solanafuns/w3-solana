@@ -1,5 +1,5 @@
 use {
-    crate::{instruction::InstructionData, process},
+    crate::{instruction::InstructionData, process::config, process::process, process::trunk},
     borsh::BorshDeserialize,
     solana_program::{
         account_info::AccountInfo, declare_id, entrypoint, entrypoint::ProgramResult, msg,
@@ -18,12 +18,20 @@ pub fn process_instruction(
     msg!("Program ID: {:?}", program_id);
     match InstructionData::try_from_slice(instruction_data) {
         Ok(instruction_data) => match instruction_data {
+            InstructionData::NameMapping { name, program } => {
+                msg!("Name Mapping: {:?}", name);
+                config::name_config(program_id, accounts, &name, program)?
+            }
             InstructionData::PutContent { path, body } => {
                 process::put_content(program_id, accounts, &path, &body)?
             }
-            InstructionData::NameMapping { name, program } => {
-                msg!("Name Mapping: {:?}", name);
-                process::name_config(program_id, accounts, &name, program)?
+            InstructionData::PutTrunkContent {
+                path,
+                trunk_no,
+                body,
+            } => {
+                msg!("Put Trunk Content: {:?}", path);
+                trunk::put_trunk_content(program_id, accounts, &path, trunk_no, &body)?
             }
         },
         Err(err) => {
