@@ -1,4 +1,4 @@
 # image: node:buster
 
-# image:
+image: gitpod/workspace-full
 #   file: ./docker/Dockerfile
