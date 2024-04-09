@@ -190,29 +190,6 @@ impl W3Client {
         }
     }
 
-    fn upload_trunk(
-        &self,
-        web_path: &str,
-        trunk: Vec<u8>,
-        idx: u8,
-        meta_account: &Pubkey,
-        trunk_account: &Pubkey,
-    ) {
-        info!("Uploading trunk {} of length {}", idx, trunk.len());
-        match self.trunk_instruction(web_path, trunk, idx, meta_account, trunk_account) {
-            Ok(instruction) => {
-                self.send_instructions(
-                    &self.signer.pubkey(),
-                    &vec![&self.signer],
-                    vec![instruction],
-                );
-            }
-            Err(e) => {
-                error!("{}", e);
-            }
-        }
-    }
-
     fn upload_simple(&self, web_path: &str, body: &Vec<u8>, account: Pubkey) {
         info!("Uploading simple content of length {}", body.len());
         let instruction_enum = InstructionData::PutContent {
@@ -258,7 +235,6 @@ impl W3Client {
         let body_trunks = {
             let file_data = fs::read(full_path).unwrap();
             info!("Data length: {}", file_data.len());
-
             if file_data.len() > self.trunk_size {
                 warn!("Data too long, truncating to {} bytes", self.trunk_size);
                 file_data
@@ -271,14 +247,51 @@ impl W3Client {
         };
 
         if body_trunks.len() > 1 {
+            // let mut instructions = Vec::new();
             for (idx, trunk) in body_trunks.iter().enumerate() {
+                // if idx % 3 == 0 && idx > 0 {
+                //     self.send_instructions(
+                //         &self.signer.pubkey(),
+                //         &vec![&self.signer],
+                //         instructions.clone(),
+                //     );
+                //     instructions.clear();
+                // }
+
                 let (trunk_account, _) = self
                     .helper
                     .find_program_address_by_text_suffix(web_path, &vec![idx as u8]);
 
-                info!("Trunk account: {}", trunk_account);
-                self.upload_trunk(web_path, trunk.clone(), idx as u8, &account, &trunk_account);
+                match self.trunk_instruction(
+                    web_path,
+                    trunk.clone(),
+                    idx as u8,
+                    &account,
+                    &trunk_account,
+                ) {
+                    Ok(instruction) => {
+                        // instructions.push(instruction);
+                        self.send_instruction(
+                            &self.signer.pubkey(),
+                            &vec![&self.signer],
+                            instruction,
+                        );
+                    }
+                    Err(e) => {
+                        error!("{}", e);
+                    }
+                }
+
+                // if instructions.len() > 0 {
+                //     self.send_instructions(
+                //         &self.signer.pubkey(),
+                //         &vec![&self.signer],
+                //         instructions.clone(),
+                //     );
+                // }
             }
+            // info!("Trunk account: {}", trunk_account);
+            // self.upload_trunk(web_path, trunk.clone(), idx as u8, &account, &trunk_account);
         } else {
             self.upload_simple(web_path, &body_trunks[0], account)
         }
