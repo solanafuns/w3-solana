@@ -259,6 +259,8 @@ impl W3Client {
                 let (trunk_account, _) = self
                     .helper
                     .find_program_address_by_text_suffix(web_path, &vec![idx as u8]);
+
+                info!("Trunk account: {}", trunk_account);
                 self.upload_trunk(web_path, trunk.clone(), idx as u8, &account, &trunk_account);
             }
         } else {

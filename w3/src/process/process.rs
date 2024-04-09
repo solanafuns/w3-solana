@@ -7,6 +7,7 @@ use solana_program::{
     system_instruction,
     sysvar::{rent::Rent, Sysvar},
 };
+use w3solana::pda_helper::PdaHelper;
 
 use crate::instruction::PageData;
 
@@ -20,7 +21,10 @@ pub fn put_content(
     let payer: &AccountInfo<'_> = next_account_info(account_info_iter)?;
     let content_account: &AccountInfo<'_> = next_account_info(account_info_iter)?;
     let system_program_account: &AccountInfo<'_> = next_account_info(account_info_iter)?;
-    let (content_pda, bump_seed) = Pubkey::find_program_address(&[path.as_bytes()], program_id);
+
+    let (content_pda, bump_seed) =
+        PdaHelper::new(program_id.clone()).find_program_address_by_text(&path);
+
     assert!(content_account.key == &content_pda);
     let raw_page_data = &PageData::RawData { data: body.clone() }.try_to_vec()?;
     let data_size = raw_page_data.len();

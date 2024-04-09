@@ -7,6 +7,7 @@ use solana_program::{
     system_instruction,
     sysvar::{clock::Clock, rent::Rent, Sysvar},
 };
+use w3solana::pda_helper::PdaHelper;
 
 pub fn name_config(
     program_id: &Pubkey,
@@ -19,10 +20,11 @@ pub fn name_config(
     let payer: &AccountInfo<'_> = next_account_info(account_info_iter)?;
     let config_account: &AccountInfo<'_> = next_account_info(account_info_iter)?;
     let system_program_account: &AccountInfo<'_> = next_account_info(account_info_iter)?;
-    // let my_seed_helper = SeedHelper::new(".w3-solana-name".to_string());
     let base_seed = ".w3-solana-name";
-    let (config_pda, bump_seed) =
-        Pubkey::find_program_address(&[base_seed.as_bytes(), name.as_bytes()], program_id);
+
+    let (config_pda, bump_seed) = PdaHelper::new(program_id.clone())
+        .find_program_address(&[base_seed.as_bytes(), name.as_bytes()]);
+
     assert!(config_account.data_is_empty());
 
     let now = Clock::get()?;
