@@ -1,12 +1,18 @@
 body{
-    background-color: azure;
-    color: black;
+    background-color: rgb(5, 35, 35);
+    color: rgb(240, 221, 221);
     font-family: Arial, sans-serif;
     margin: 0 auto;
     padding: 2rem;
 }
 
+
+
 h1{
     width: 80%;
-    text-align: center;
+}
+
+div.container{
+    display: flex;
+    flex-wrap: wrap;
 }
