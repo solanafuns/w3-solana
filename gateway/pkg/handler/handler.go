@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -46,11 +47,16 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 					logrus.Infof("parse content done ")
 					if len(pageContent.RawData) > 0 {
 						logrus.Info("has RawData")
-						w.WriteHeader(http.StatusOK)
 						w.Header().Set("W3-Solana-Resolver", client.NameResolver.ToBase58())
 						w.Header().Set("W3-Solana-Program", client.Program.ToBase58())
 						w.Header().Set("W3-Solana-Account", account.ToBase58())
 						w.Header().Set("W3-Solana-Network", client.Network())
+						segments := strings.Split(r.RequestURI, ".")
+						if len(segments) > 1 {
+							fileExtension := segments[len(segments)-1]
+							w.Header().Set("Content-Type", mime.TypeByExtension("."+fileExtension))
+						}
+						w.WriteHeader(http.StatusOK)
 						w.Write(pageContent.RawData)
 					}
 				} else {
