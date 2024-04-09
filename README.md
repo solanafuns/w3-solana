@@ -1,4 +1,4 @@
-# w3-solana
+# w3solana
 
 w3-solana means **Web3 access protocol on solana** .
 

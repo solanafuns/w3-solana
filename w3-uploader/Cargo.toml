@@ -8,10 +8,11 @@ edition = "2021"
 [dependencies]
 borsh = "0.10.3"
 clap = { version = "4.5.4", features = ["derive"] }
-solana-program = "1.18.4"
+solana-program = "1.18.10"
 solana-sdk = "1.18.8"
 log = "0.4.20"
 env_logger = "0.10.0"
 solana-client = "1.18.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.34"
+w3solana = { path = "../" }

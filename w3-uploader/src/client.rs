@@ -9,6 +9,7 @@ use {
         system_program,
     },
     std::{fs, path::Path, str::FromStr},
+    w3solana::pda_helper::PdaHelper,
 };
 
 use crate::{
@@ -22,6 +23,7 @@ pub struct W3Client {
     pub network: Network,
     pub trunk_size: usize,
     pub connection: RpcClient,
+    pub helper: PdaHelper,
 }
 
 impl W3Client {
@@ -32,6 +34,7 @@ impl W3Client {
             network: network.clone(),
             trunk_size,
             connection: network.get_rpc_client(),
+            helper: PdaHelper::new(program),
         }
     }
 
@@ -45,6 +48,7 @@ impl W3Client {
             network: network.clone(),
             trunk_size: 512,
             connection: network.get_rpc_client(),
+            helper: PdaHelper::new(program),
         }
     }
 
@@ -96,7 +100,7 @@ impl W3Client {
         info!("Configuring with name: {}", name);
         let config_seeds = vec![".w3-solana-name".as_bytes(), name.as_bytes()];
         info!("config_seeds {:?}", config_seeds);
-        let (config_account, bump_seed) = self.find_program_address(&config_seeds);
+        let (config_account, bump_seed) = self.helper.find_program_address(&config_seeds);
         info!("Account: {}", config_account);
         info!("Bump seed: {}", bump_seed);
         let instruction_enum = InstructionData::NameMapping {
@@ -141,24 +145,63 @@ impl W3Client {
         info!("Deploying program...");
     }
 
-    fn upload_file(&self, web_path: &str, full_path: &str) {
-        let (account, bump_seed) = self.find_program_address_by_text(web_path);
-        info!("Account: {}", account);
-        info!("Bump seed: {}", bump_seed);
-        let file_body = {
-            let file_data = fs::read(full_path).unwrap();
-            info!("Data length: {}", file_data.len());
-            if file_data.len() > self.trunk_size {
-                warn!("Data too long, truncating to {} bytes", self.trunk_size);
-                file_data[..self.trunk_size].to_vec()
-            } else {
-                file_data
-            }
+    fn upload_trunk(
+        &self,
+        web_path: &str,
+        trunk: Vec<u8>,
+        idx: u8,
+        meta_account: &Pubkey,
+        trunk_account: &Pubkey,
+    ) {
+        info!("Uploading trunk {} of length {}", idx, trunk.len());
+
+        let instruction_enum = InstructionData::PutTrunkContent {
+            path: web_path.to_string(),
+            trunk_no: idx,
+            body: trunk,
         };
 
+        match instruction_enum.try_to_vec() {
+            Ok(instruction_data) => {
+                let instruction = solana_sdk::instruction::Instruction {
+                    program_id: self.program,
+                    accounts: vec![
+                        AccountMeta {
+                            pubkey: self.signer.pubkey(),
+                            is_signer: true,
+                            is_writable: true,
+                        },
+                        AccountMeta {
+                            pubkey: meta_account.clone(),
+                            is_signer: false,
+                            is_writable: true,
+                        },
+                        AccountMeta {
+                            pubkey: trunk_account.clone(),
+                            is_signer: false,
+                            is_writable: true,
+                        },
+                        AccountMeta {
+                            pubkey: system_program::ID,
+                            is_signer: false,
+                            is_writable: false,
+                        },
+                    ],
+                    data: instruction_data,
+                };
+                self.send_instruction(&self.signer.pubkey(), &vec![&self.signer], instruction);
+            }
+            Err(e) => {
+                error!("Error serializing instruction: {:?}", e);
+            }
+        }
+    }
+
+    fn upload_simple(&self, web_path: &str, body: &Vec<u8>, account: Pubkey) {
+        info!("Uploading simple content of length {}", body.len());
         let instruction_enum = InstructionData::PutContent {
             path: web_path.to_string(),
-            body: file_body,
+            body: body.clone(),
         };
 
         match instruction_enum.try_to_vec() {
@@ -189,6 +232,37 @@ impl W3Client {
             Err(e) => {
                 error!("Error serializing instruction: {:?}", e);
             }
+        }
+    }
+
+    fn upload_file(&self, web_path: &str, full_path: &str) {
+        let (account, bump_seed) = self.helper.find_program_address_by_text(web_path);
+        info!("Account: {}", account);
+        info!("Bump seed: {}", bump_seed);
+        let body_trunks = {
+            let file_data = fs::read(full_path).unwrap();
+            info!("Data length: {}", file_data.len());
+
+            if file_data.len() > self.trunk_size {
+                warn!("Data too long, truncating to {} bytes", self.trunk_size);
+                file_data
+                    .chunks(self.trunk_size)
+                    .map(|c| c.to_vec())
+                    .collect()
+            } else {
+                vec![file_data]
+            }
+        };
+
+        if body_trunks.len() > 1 {
+            for (idx, trunk) in body_trunks.iter().enumerate() {
+                let (trunk_account, _) = self
+                    .helper
+                    .find_program_address_by_text_suffix(web_path, &vec![idx as u8]);
+                self.upload_trunk(web_path, trunk.clone(), idx as u8, &account, &trunk_account);
+            }
+        } else {
+            self.upload_simple(web_path, &body_trunks[0], account)
         }
     }
 }
