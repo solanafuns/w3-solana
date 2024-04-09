@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"mime"
@@ -58,6 +59,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 						}
 						w.WriteHeader(http.StatusOK)
 						w.Write(pageContent.RawData)
+					} else if pageContent.TrunkPage.Trunks > 0 {
+						pageBuffer := bytes.NewBuffer(nil)
+						for i := 0; i < int(pageContent.TrunkPage.Trunks); i++ {
+							if trunkAccount, err := client.UrlTrunkAccount(r.RequestURI, uint8(i)); err == nil {
+								if trunkContent, err := client.LoadAccountContent(&trunkAccount); err == nil {
+									pageBuffer.Write(trunkContent)
+								}
+							}
+						}
+						w.WriteHeader(http.StatusOK)
+						w.Write(pageBuffer.Bytes())
 					}
 				} else {
 					w.WriteHeader(http.StatusInternalServerError)

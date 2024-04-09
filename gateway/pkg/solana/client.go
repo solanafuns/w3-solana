@@ -44,6 +44,31 @@ type W3Site struct {
 	Client       *client.Client
 }
 
+func (s *W3Site) UrlTrunkAccount(path string, trunk_no uint8) (common.PublicKey, error) {
+	logrus.Info("path: ", path)
+	seeds := [][]byte{}
+	if len(path) < 32 {
+		seeds = append(seeds, []byte(path))
+	} else {
+		for i := 0; i < len(path); i += 32 {
+			end := i + 32
+			if end > len(path) {
+				end = len(path)
+			}
+			seeds = append(seeds, []byte(path[i:end]))
+		}
+	}
+	seeds = append(seeds, []byte{trunk_no})
+	k, bump_seed, err := common.FindProgramAddress(seeds, s.Program)
+	logrus.WithFields(logrus.Fields{
+		"seeds":   seeds,
+		"program": s.Program.ToBase58(),
+		"bump":    bump_seed,
+		"account": k.ToBase58(),
+	}).Info("find url account !!!")
+	return k, err
+}
+
 func (s *W3Site) UrlAccount(path string) (common.PublicKey, error) {
 	logrus.Info("path: ", path)
 	seeds := [][]byte{}
