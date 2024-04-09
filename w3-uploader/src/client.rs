@@ -145,6 +145,51 @@ impl W3Client {
         info!("Deploying program...");
     }
 
+    fn trunk_instruction(
+        self: &Self,
+        web_path: &str,
+        trunk: Vec<u8>,
+        idx: u8,
+        meta_account: &Pubkey,
+        trunk_account: &Pubkey,
+    ) -> Result<solana_sdk::instruction::Instruction, String> {
+        let instruction_enum = InstructionData::PutTrunkContent {
+            path: web_path.to_string(),
+            trunk_no: idx,
+            body: trunk,
+        };
+
+        match instruction_enum.try_to_vec() {
+            Ok(instruction_data) => Ok(solana_sdk::instruction::Instruction {
+                program_id: self.program,
+                accounts: vec![
+                    AccountMeta {
+                        pubkey: self.signer.pubkey(),
+                        is_signer: true,
+                        is_writable: true,
+                    },
+                    AccountMeta {
+                        pubkey: meta_account.clone(),
+                        is_signer: false,
+                        is_writable: true,
+                    },
+                    AccountMeta {
+                        pubkey: trunk_account.clone(),
+                        is_signer: false,
+                        is_writable: true,
+                    },
+                    AccountMeta {
+                        pubkey: system_program::ID,
+                        is_signer: false,
+                        is_writable: false,
+                    },
+                ],
+                data: instruction_data,
+            }),
+            Err(e) => Err(format!("Error serializing instruction: {:?}", e)),
+        }
+    }
+
     fn upload_trunk(
         &self,
         web_path: &str,
@@ -154,45 +199,16 @@ impl W3Client {
         trunk_account: &Pubkey,
     ) {
         info!("Uploading trunk {} of length {}", idx, trunk.len());
-
-        let instruction_enum = InstructionData::PutTrunkContent {
-            path: web_path.to_string(),
-            trunk_no: idx,
-            body: trunk,
-        };
-
-        match instruction_enum.try_to_vec() {
-            Ok(instruction_data) => {
-                let instruction = solana_sdk::instruction::Instruction {
-                    program_id: self.program,
-                    accounts: vec![
-                        AccountMeta {
-                            pubkey: self.signer.pubkey(),
-                            is_signer: true,
-                            is_writable: true,
-                        },
-                        AccountMeta {
-                            pubkey: meta_account.clone(),
-                            is_signer: false,
-                            is_writable: true,
-                        },
-                        AccountMeta {
-                            pubkey: trunk_account.clone(),
-                            is_signer: false,
-                            is_writable: true,
-                        },
-                        AccountMeta {
-                            pubkey: system_program::ID,
-                            is_signer: false,
-                            is_writable: false,
-                        },
-                    ],
-                    data: instruction_data,
-                };
-                self.send_instruction(&self.signer.pubkey(), &vec![&self.signer], instruction);
+        match self.trunk_instruction(web_path, trunk, idx, meta_account, trunk_account) {
+            Ok(instruction) => {
+                self.send_instructions(
+                    &self.signer.pubkey(),
+                    &vec![&self.signer],
+                    vec![instruction],
+                );
             }
             Err(e) => {
-                error!("Error serializing instruction: {:?}", e);
+                error!("{}", e);
             }
         }
     }
