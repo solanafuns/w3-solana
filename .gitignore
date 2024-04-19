@@ -21,3 +21,7 @@ env.sh
 
 dist
 test-ledger
+
+# Added by cargo
+
+/target

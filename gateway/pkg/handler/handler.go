@@ -68,6 +68,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 								}
 							}
 						}
+						segments := strings.Split(r.RequestURI, ".")
+						if len(segments) > 1 {
+							fileExtension := segments[len(segments)-1]
+							w.Header().Set("Content-Type", mime.TypeByExtension("."+fileExtension))
+						}
 						w.WriteHeader(http.StatusOK)
 						w.Write(pageBuffer.Bytes())
 					}

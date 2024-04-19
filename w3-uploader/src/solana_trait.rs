@@ -24,6 +24,7 @@ impl SolanaTransaction for W3Client {
     ) {
         info!("instruction data len : {:?}", instructions.len());
         let blockhash = self.connection.get_latest_blockhash().unwrap();
+
         let transaction =
             Transaction::new_signed_with_payer(&instructions, Some(&payer), singers, blockhash);
 

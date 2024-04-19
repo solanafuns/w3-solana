@@ -19,7 +19,6 @@ pub fn put_trunk_content(
     trunk_no: u8,
     body: &Vec<u8>,
 ) -> ProgramResult {
-    msg!("test put_trunk_content");
     let account_info_iter = &mut accounts.iter();
     let payer: &AccountInfo<'_> = next_account_info(account_info_iter)?;
     let meta_account: &AccountInfo<'_> = next_account_info(account_info_iter)?;

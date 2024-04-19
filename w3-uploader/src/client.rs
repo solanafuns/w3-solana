@@ -233,7 +233,7 @@ impl W3Client {
         info!("Account: {}", account);
         info!("Bump seed: {}", bump_seed);
         let body_trunks = {
-            let file_data = fs::read(full_path).unwrap();
+            let file_data: Vec<u8> = fs::read(full_path).unwrap();
             info!("Data length: {}", file_data.len());
             if file_data.len() > self.trunk_size {
                 warn!("Data too long, truncating to {} bytes", self.trunk_size);
@@ -246,18 +246,11 @@ impl W3Client {
             }
         };
 
-        if body_trunks.len() > 1 {
+        let trunk_count = body_trunks.len();
+
+        if trunk_count > 1 {
             // let mut instructions = Vec::new();
             for (idx, trunk) in body_trunks.iter().enumerate() {
-                // if idx % 3 == 0 && idx > 0 {
-                //     self.send_instructions(
-                //         &self.signer.pubkey(),
-                //         &vec![&self.signer],
-                //         instructions.clone(),
-                //     );
-                //     instructions.clear();
-                // }
-
                 let (trunk_account, _) = self
                     .helper
                     .find_program_address_by_text_suffix(web_path, &vec![idx as u8]);
@@ -270,6 +263,7 @@ impl W3Client {
                     &trunk_account,
                 ) {
                     Ok(instruction) => {
+                        info!("Sending instruction for trunk {} / {}", idx, trunk_count);
                         // instructions.push(instruction);
                         self.send_instruction(
                             &self.signer.pubkey(),

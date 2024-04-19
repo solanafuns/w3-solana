@@ -34,7 +34,7 @@ pub fn process_instruction(
                 trunk_no,
                 body,
             } => {
-                msg!("Put Trunk Content: {:?}", path);
+                msg!("Put Trunk Content: {:?} trunk_no: {}", path, trunk_no);
                 trunk::put_trunk_content(program_id, accounts, &path, trunk_no, &body)?
             }
         },
