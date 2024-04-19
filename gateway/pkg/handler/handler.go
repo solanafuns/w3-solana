@@ -32,7 +32,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				w.Write(configBytes)
 				return
 			}
-
 		}
 		logrus.Info("host: ", host, " name: ", nameHost, " program: ", client.Program.ToBase58())
 
@@ -45,7 +44,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(err.Error()))
 			} else {
 				if pageContent, err := solana.ParsePageContent(content); err == nil {
-					logrus.Infof("parse content done ")
+					jsonMeta, _ := json.Marshal(pageContent)
+					logrus.Infof("parse content done %s ", string(jsonMeta))
 					if len(pageContent.RawData) > 0 {
 						logrus.Info("has RawData")
 						w.Header().Set("W3-Solana-Resolver", client.NameResolver.ToBase58())
@@ -61,7 +61,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 						w.Write(pageContent.RawData)
 					} else if pageContent.TrunkPage.Trunks > 0 {
 						pageBuffer := bytes.NewBuffer(nil)
-						for i := 0; i < int(pageContent.TrunkPage.Trunks); i++ {
+						for i := 0; i <= int(pageContent.TrunkPage.Trunks); i++ {
 							if trunkAccount, err := client.UrlTrunkAccount(r.RequestURI, uint8(i)); err == nil {
 								if trunkContent, err := client.LoadAccountContent(&trunkAccount); err == nil {
 									pageBuffer.Write(trunkContent)

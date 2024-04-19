@@ -94,6 +94,10 @@ func (s *W3Site) UrlAccount(path string) (common.PublicKey, error) {
 	return k, err
 }
 
+// let base_seed = ".w3-solana-name";
+// let (config_pda, bump_seed) = PdaHelper::new(program_id.clone())
+// .find_program_address(&[base_seed.as_bytes(), name.as_bytes()]);
+
 func (s *W3Site) GetSiteConfig(name string) (*NameConfig, error) {
 	baseSeed := ".w3-solana-name"
 	seeds := [][]byte{}
@@ -104,7 +108,6 @@ func (s *W3Site) GetSiteConfig(name string) (*NameConfig, error) {
 		return nil, err
 	}
 	logrus.Info(seeds)
-
 	logrus.Info("config account is ", k.ToBase58())
 
 	data, err := s.LoadAccountContent(&k)
