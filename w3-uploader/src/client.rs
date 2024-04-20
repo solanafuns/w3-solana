@@ -58,6 +58,16 @@ impl W3Client {
         info!("current account : {}", self.signer.pubkey());
         info!("current program : {:?}", self.program);
         info!("current network : {:?}", self.network.to_string());
+
+        match self.get_account_info(&self.signer.pubkey()) {
+            Some(account) => {
+                info!("account balance : {:?}", account.lamports);
+            }
+            None => {
+                error!("account not found");
+            }
+        }
+
         println!("");
     }
 }

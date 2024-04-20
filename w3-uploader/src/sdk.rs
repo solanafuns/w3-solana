@@ -20,9 +20,9 @@ pub enum Network {
 impl Network {
     pub fn to_string(&self) -> String {
         match self {
-            Self::Local => "local".to_string(),
-            Self::Dev => "dev_net".to_string(),
-            Self::Test => "test_net".to_string(),
+            Self::Local => "localnet".to_string(),
+            Self::Dev => "devnet".to_string(),
+            Self::Test => "testnet".to_string(),
             Self::MainBeta => "mainnet".to_string(),
             Self::Custom(url) => url.to_string(),
         }
@@ -30,10 +30,10 @@ impl Network {
 
     pub fn from_string(network_name: &str) -> Self {
         match network_name {
-            "local" => Self::Local,
-            "dev" => Self::Dev,
-            "test" => Self::Test,
-            "main-beta" => Self::MainBeta,
+            "localnet" => Self::Local,
+            "devnet" => Self::Dev,
+            "testnet" => Self::Test,
+            "mainnet" => Self::MainBeta,
             _ => Self::Custom(network_name.to_string()),
         }
     }

@@ -13,6 +13,7 @@ pub trait SolanaTransaction {
         singers: &Vec<&Keypair>,
         instructions: Vec<Instruction>,
     );
+    fn get_account_info(&self, pubkey: &Pubkey) -> Option<solana_sdk::account::Account>;
 }
 
 impl SolanaTransaction for W3Client {
@@ -41,5 +42,15 @@ impl SolanaTransaction for W3Client {
     fn send_instruction(&self, payer: &Pubkey, singers: &Vec<&Keypair>, instruction: Instruction) {
         info!("instruction data len : {:?}", instruction.data.len());
         self.send_instructions(payer, singers, vec![instruction])
+    }
+
+    fn get_account_info(&self, pubkey: &Pubkey) -> Option<solana_sdk::account::Account> {
+        match self.connection.get_account(pubkey) {
+            Ok(account) => Some(account),
+            Err(e) => {
+                error!("get account error : {:?}", e);
+                None
+            }
+        }
     }
 }
